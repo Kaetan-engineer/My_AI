@@ -3,6 +3,7 @@ from numpy import ndarray, float64
 from jarvis.model.activation import Activation
 from jarvis.model.loss import Loss
 from jarvis.model.layers import DenseLayer
+from model.optimizers import Optimizer
 from typing import Iterator
 
 
@@ -49,9 +50,9 @@ class NeuralNetwork:
     def loss_gradient(y_pred: ndarray, y_actual: ndarray, loss_func: Loss) -> ndarray:
         return loss_func.backward(y_pred, y_actual)
 
-    def update(self, learning_rate: float) -> None:
+    def update(self, learning_rate: float, optimizer: Optimizer) -> None:
         for layer in self.layers:
-            layer.update(learning_rate)
+            layer.update(learning_rate, optimizer)
 
     def zero_grad(self) -> None:
         for layer in self.layers:

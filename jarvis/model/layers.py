@@ -18,6 +18,12 @@ class DenseLayer:
         self.activation: Activation = activation
         self.pre_activation = None
 
+        self.weight_mean = np.zeros_like(self.weights)
+        self.bias_mean = np.zeros_like(self.biases)
+
+        self.weight_velocity = np.zeros_like(self.weights)
+        self.bias_velocity = np.zeros_like(self.biases)
+
         self.dweights = np.zeros_like(self.weights)
         self.dbiases = np.zeros_like(self.biases)
         self.dinputs = None
@@ -41,9 +47,8 @@ class DenseLayer:
 
         return self.dinputs
 
-    def update(self, learning_rate: float) -> None:
-        self.weights -= learning_rate * self.dweights
-        self.biases -= learning_rate * self.dbiases
+    def update(self, learning_rate: float, optimizer) -> None:
+        optimizer(learning_rate, self)
 
     def zero_grad(self) -> None:
         self.dweights = np.zeros_like(self.weights)

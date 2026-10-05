@@ -2,19 +2,30 @@ import numpy as np
 import json
 from pathlib import Path
 from numpy import ndarray, float64
-from jarvis.model.neural_network import NeuralNetwork
+from jarvis.model.neural_network import NeuralNetwork, Optimizer
 from jarvis.model.loss import Loss
+from visuals.visualizer import Visualizer
 from sklearn.utils import shuffle
 
 
 class Trainer:
-    def __init__(self, model: NeuralNetwork, loss_func: Loss, learning_rate: float, batch_size: int) -> None:
-        self.model = model
-        self.loss_func = loss_func
-        self.learning_rate = learning_rate
-        self.batch_size = batch_size
+    def __init__(self, model: NeuralNetwork, loss_func: Loss, optimizer: Optimizer, learning_rate: float,
+                 batch_size: int) -> None:
+        self.model: NeuralNetwork = model
+        self.loss_func: Loss = loss_func
+        self.optimizer: Optimizer = optimizer
+        self.visualizer: Visualizer = Visualizer()
+        self.learning_rate: float = learning_rate
+        self.batch_size: int = batch_size
 
-    def train(self, x: ndarray, y: ndarray, epochs: int, /, visuals: bool=False) -> None:
+    def train(self,
+              x: ndarray,
+              y: ndarray,
+              epochs: int,
+              /,
+              visuals: bool = False,
+              save_between_epochs: tuple[bool, int] | None = None,
+              visual_record_interval: int=10) -> None:
         X_train, y_train = x.copy(), y.copy()
         num_samples = len(x)
         for epoch in range(epochs):
@@ -37,16 +48,25 @@ class Trainer:
 
                 self.model.zero_grad()
                 self.model.backward(loss_gradient)
-                self.model.update(self.learning_rate)
+                self.model.update(self.learning_rate, self.optimizer)
 
             avg_loss = total_loss / num_samples
+
+            if save_between_epochs is not None and save_between_epochs[0] and (epoch + 1) % save_between_epochs[1] == 0:
+                self.save()
+
+            if (1 + epoch) % visual_record_interval == 0:
+                self.visualizer.record_losses(epoch, avg_loss)
 
             if visuals:
                 full_pred = self.model.forward(X_train)
                 print(f"Epoch {epoch + 1}/{epochs} - Loss: {avg_loss:.20f}")
                 print(f"Predictions:\n{full_pred}\n")
 
-    def save(self, filename: str="parameters.json") -> None:
+        if visuals:
+            self.visualizer.plot()
+
+    def save(self, filename: str = "parameters.json") -> None:
         if not Path(filename).suffix.lower() == ".json":
             raise ValueError("File path must have a JSON suffix.")
 
@@ -68,7 +88,7 @@ class Trainer:
         with open(filename, "w") as file:
             json.dump(layers, file, indent=4)
 
-    def load(self, filename: str= "parameters.json") -> None:
+    def load(self, filename: str = "parameters.json") -> None:
         if not Path(filename).is_file():
             raise FileExistsError(f"Path file {filename} does not exist.")
 
