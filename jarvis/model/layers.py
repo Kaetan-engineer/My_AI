@@ -6,13 +6,15 @@ from jarvis.model.activation import Activation
 
 class DenseLayer:
     def __init__(self, input_count: int, neuron_count: int, activation: Activation, initialization: str | None=None) -> None:
+        raw_weights = np.random.randn(input_count, neuron_count)
+
         if initialization is not None:
             if initialization.lower() == "he":
-                self.weights: ndarray = np.random.rand(input_count, neuron_count) * np.sqrt(2.0 / input_count)
+                self.weights: ndarray = raw_weights * np.sqrt(2.0 / input_count)
             elif initialization.lower() == "xavier":
-                self.weights = np.random.rand(input_count, neuron_count) * np.sqrt(1.0 / input_count)
+                self.weights = raw_weights * np.sqrt(1.0 / input_count)
         else:
-            self.weights: ndarray = np.array(np.random.rand(input_count, neuron_count))
+            self.weights: ndarray = np.array(raw_weights * 0.01)
         self.biases: ndarray = np.zeros(neuron_count)
 
         self.activation: Activation = activation
@@ -36,10 +38,18 @@ class DenseLayer:
 
         self.pre_activation = self.inputs @ self.weights + self.biases
 
+        print(f"Pre activation dims: {self.pre_activation.shape}")
+        print(f"Weights (forward) dims: {self.weights.shape}")
+        print("\n")
+
         return self.activation.forward(self.pre_activation)
 
     def backward(self, output_gradient: ndarray) -> ndarray:
         z_gradient = self.activation.backward(output_gradient)
+
+        print(f"Z gradient dims: {z_gradient.shape}")
+        print(f"Weights (backward) dims: {self.weights.shape}")
+        print("\n")
 
         self.dweights = self.inputs.T @ z_gradient
         self.dbiases = np.sum(z_gradient, axis=0)

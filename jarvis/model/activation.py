@@ -6,6 +6,10 @@ from numpy import ndarray, float64
 class Activation(ABC):
     def __init__(self) -> None:
         self.output = None
+
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
+
     @abstractmethod
     def forward(self, inputs: ndarray) -> ndarray:
         return NotImplemented
@@ -70,15 +74,18 @@ class Sigmoid(Activation):
         super().__init__()
 
     def forward(self, inputs: ndarray) -> ndarray:
-        self.output = np.where(
-            inputs >= 0,
-            1 / (1 + np.exp(-inputs)),
-            np.exp(inputs) / (1 + np.exp(inputs))
-        )
+        print(f"Input (activation) dims: {inputs.shape}")
+        self.output = 1 / (1 + np.exp(-inputs))
+        print(f"Output (activation) dims: {self.output.shape}")
+        print("\n")
         return self.output
 
     def backward(self, output_gradient: ndarray) -> ndarray:
-        return output_gradient * self.output * (1 - self.output)
+        print(f"Output gradient dims: {output_gradient.shape}")
+        loss_gradient = output_gradient * self.output * (1.0 - self.output)
+        print(f"Loss gradient (activation) dims: {loss_gradient.shape}")
+        print("\n")
+        return loss_gradient
 
 
 class Softmax(Activation):
